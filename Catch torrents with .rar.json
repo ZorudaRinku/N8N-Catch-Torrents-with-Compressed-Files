@@ -1,0 +1,656 @@
+{
+  "name": "Catch torrents with .rar",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=http://<>/api/v3/queue/{{ $json.id }}?removeFromClient=true&blocklist=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3328,
+        -304
+      ],
+      "id": "7056f858-32c3-4a37-aa48-6cf4e9ec7a2e",
+      "name": "Radarr Delete & Rescan",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8a3G4jZ4tEdnshWa",
+          "name": "Radarr API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=http://<>/api/v3/queue/{{ $('Sonarr Get Queue ID').item.json.id }}?removeFromClient=true&blocklist=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3328,
+        128
+      ],
+      "id": "5cf504ff-a002-4d8a-abd8-a0f897cccec2",
+      "name": "Sonarr Delete & Rescan",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Zsgu5Vi7yTBec3cI",
+          "name": "Sonarr API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=http://<>/api/v3/queue/details?movieId={{ $('Radarr/Sonarr Webhook').item.json.body.movie.id }}&includeMovie=false",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        -192
+      ],
+      "id": "63fa9b12-4414-4fbc-a916-9c1d6db720e5",
+      "name": "Radarr Get Queue ID",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8a3G4jZ4tEdnshWa",
+          "name": "Radarr API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=http://<>/api/v3/queue/details?seriesId={{ $('Radarr/Sonarr Webhook').item.json.body.movie.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        256
+      ],
+      "id": "7239247c-985f-4538-b19f-8ed1540ae8e5",
+      "name": "Sonarr Get Queue ID",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Zsgu5Vi7yTBec3cI",
+          "name": "Sonarr API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d771a217-e3e8-4b37-a407-4b8eb21906d5",
+              "leftValue": "={{ $json.hasMatch }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2432,
+        -64
+      ],
+      "id": "57f0dba2-52fd-4d98-b675-23ee799a5f1e",
+      "name": "If Files Contain Rar/Zip",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const hasMatch = $input.all().some(item => /\\.(rar|zip|r01)$/.test(item.json.name));\n\nreturn $input.all().map(item => ({\n  ...item,\n  json: {\n    ...item.json,\n    hasMatch: hasMatch\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        -64
+      ],
+      "id": "43117f69-734d-48c1-9ded-7173076cb185",
+      "name": "Does Any File Have Compressed Files",
+      "notes": "We need this because we need to return 1 output based on the content of all inputs. When we only do an if statement, n8n doesn't output just the 1 true/false, it outputs all inputs individually. This outputs all the inputs and also sets a single flag based on that."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3308de7f-3c11-4f81-85c0-4a0a42e13d20",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1312,
+        -64
+      ],
+      "id": "eb74a909-bf91-4d96-bf83-36a7bb9d472f",
+      "name": "Radarr/Sonarr Webhook",
+      "webhookId": "3308de7f-3c11-4f81-85c0-4a0a42e13d20"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1536,
+        -64
+      ],
+      "id": "2b628bac-db49-4feb-9643-0aeebc826a1f",
+      "name": "Wait for Downloader",
+      "webhookId": "bce4e1fa-eac3-4fb1-b21f-38253adddcf6"
+    },
+    {
+      "parameters": {
+        "url": "=http://<>/api/v2/torrents/files?hash={{ $json.body.downloadId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        -64
+      ],
+      "id": "e32f0d91-4655-44d3-98e0-c81788058bf9",
+      "name": "Get Torrent Files",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Radarr/Sonarr Webhook').item.json.body.instanceName }}",
+                    "rightValue": "Radarr",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "80484746-b144-47e8-a6c6-801bbd4e086f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a583ac81-8674-49b4-b688-bcd2724aee17",
+                    "leftValue": "={{ $('Radarr/Sonarr Webhook').item.json.body.instanceName }}",
+                    "rightValue": "Sonarr",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2656,
+        32
+      ],
+      "id": "35e62aad-6f24-49e9-94ac-a82ede6054e4",
+      "name": "Radarr/Sonarr",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sendTo": "user",
+        "userId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "content": "Compressed files found in recent request",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        -176
+      ],
+      "id": "bb57fb7c-a93c-4a34-9a3d-f1f8b8ef10f6",
+      "name": "Discord Notification",
+      "webhookId": "7cc0b1b6-2416-44e4-b0cc-d310add6c697",
+      "executeOnce": false,
+      "credentials": {
+        "discordBotApi": {
+          "id": "z0aGjBDBhppjrd6b",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3328,
+        -96
+      ],
+      "id": "74133a34-46fd-4071-9071-8772ede5b34f",
+      "name": "Wait",
+      "webhookId": "3e17d3c8-172e-4ada-8bd1-40a14c0e5795"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6ec2d8eb-b3c9-46a9-92c0-c0bdc28c89bb",
+              "leftValue": "={{ $json }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3104,
+        -256
+      ],
+      "id": "25f88b0e-c7ff-4eda-a188-01fef1218869",
+      "name": "Ensure Response from Radarr Queue",
+      "notesInFlow": true,
+      "notes": "Radarr can sometimes not respond with anything if the queue is not up to date yet"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3328,
+        352
+      ],
+      "id": "a308ff9e-6a57-426d-9bca-87c392325312",
+      "name": "Wait1",
+      "webhookId": "0134ba05-9e9f-438c-803d-b061c75ef40d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6ec2d8eb-b3c9-46a9-92c0-c0bdc28c89bb",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3104,
+        176
+      ],
+      "id": "d9c95817-fb11-47a5-b72f-9b128926116d",
+      "name": "Ensure Response from Sonarr Queue",
+      "notesInFlow": true,
+      "notes": "Sonarr can sometimes not respond with anything if the queue is not up to date yet"
+    },
+    {
+      "parameters": {
+        "content": "# Radarr",
+        "height": 416,
+        "width": 646,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2832,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "6a521236-aa31-476e-856b-e0abb61eba58",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Sonarr\n",
+        "height": 432,
+        "width": 646,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2832,
+        96
+      ],
+      "typeVersion": 1,
+      "id": "9d2ed821-559d-4a29-9197-597cc2478bf0",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "dataToSave": {
+          "values": [
+            {
+              "key": "hasMatch",
+              "value": "={{ $json.hasMatch }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executionData",
+      "typeVersion": 1.1,
+      "position": [
+        2208,
+        -64
+      ],
+      "id": "bc444a66-bc98-431d-987f-2ff058f29eea",
+      "name": "Execution Data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Radarr Get Queue ID": {
+      "main": [
+        [
+          {
+            "node": "Ensure Response from Radarr Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sonarr Get Queue ID": {
+      "main": [
+        [
+          {
+            "node": "Ensure Response from Sonarr Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Files Contain Rar/Zip": {
+      "main": [
+        [
+          {
+            "node": "Radarr/Sonarr",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Discord Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Does Any File Have Compressed Files": {
+      "main": [
+        [
+          {
+            "node": "Execution Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Radarr/Sonarr Webhook": {
+      "main": [
+        [
+          {
+            "node": "Wait for Downloader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Downloader": {
+      "main": [
+        [
+          {
+            "node": "Get Torrent Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Torrent Files": {
+      "main": [
+        [
+          {
+            "node": "Does Any File Have Compressed Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Radarr/Sonarr": {
+      "main": [
+        [
+          {
+            "node": "Radarr Get Queue ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sonarr Get Queue ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Radarr Get Queue ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Response from Radarr Queue": {
+      "main": [
+        [
+          {
+            "node": "Radarr Delete & Rescan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Sonarr Get Queue ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Response from Sonarr Queue": {
+      "main": [
+        [
+          {
+            "node": "Sonarr Delete & Rescan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Radarr Delete & Rescan": {
+      "main": [
+        []
+      ]
+    },
+    "Sonarr Delete & Rescan": {
+      "main": [
+        []
+      ]
+    },
+    "Execution Data": {
+      "main": [
+        [
+          {
+            "node": "If Files Contain Rar/Zip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Denver",
+    "callerPolicy": "workflowsFromSameOwner",
+    "timeSavedMode": "fixed",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 10
+  },
+  "versionId": "4682704e-f473-4557-9c60-669878ffdd31",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6df86fb73ed5cdd5982973d365efd6a6dbf22b85efb1610d5b68b43bc329b5c4"
+  },
+  "id": "TaV54nbYPwYUCoKg",
+  "tags": []
+}
