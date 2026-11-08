@@ -4,7 +4,7 @@
     {
       "parameters": {
         "method": "DELETE",
-        "url": "=http://<>/api/v3/queue/{{ $json.id }}?removeFromClient=true&blocklist=true",
+        "url": "=http://<>/api/v3/queue/{{ $('Radarr Get Queue ID').all().find(q => String(q.json.downloadId).toUpperCase() === String($('Radarr/Sonarr Webhook').first().json.body.downloadId).toUpperCase())?.json.id }}?removeFromClient=true&blocklist=true",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
@@ -31,7 +31,7 @@
     {
       "parameters": {
         "method": "DELETE",
-        "url": "=http://<>/api/v3/queue/{{ $('Sonarr Get Queue ID').item.json.id }}?removeFromClient=true&blocklist=true",
+        "url": "=http://<>/api/v3/queue/{{ $('Sonarr Get Queue ID').all().find(q => String(q.json.downloadId).toUpperCase() === String($('Radarr/Sonarr Webhook').first().json.body.downloadId).toUpperCase())?.json.id }}?removeFromClient=true&blocklist=true",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
@@ -83,7 +83,7 @@
     },
     {
       "parameters": {
-        "url": "=http://<>/api/v3/queue/details?seriesId={{ $('Radarr/Sonarr Webhook').item.json.body.movie.id }}",
+        "url": "=http://<>/api/v3/queue/details?seriesId={{ $('Radarr/Sonarr Webhook').item.json.body.series.id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
